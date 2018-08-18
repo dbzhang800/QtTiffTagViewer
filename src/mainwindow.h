@@ -38,6 +38,16 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *evt);
+
 private:
+    void onActionOpenTriggered();
+    void onActionAboutTriggered();
+
+    void loadSettings();
+    void saveSettings();
+    void doOpenTiffFile(const QString &filePath);
+
     Ui::MainWindow *ui;
 };

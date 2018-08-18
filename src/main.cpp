@@ -24,10 +24,20 @@
 ****************************************************************************/
 #include "mainwindow.h"
 #include <QApplication>
+#include <QLoggingCategory>
+#include <QSettings>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    a.setApplicationName("QtTiffTagViewer");
+    a.setOrganizationName("dbzhang800");
+    a.setApplicationVersion("0.0.1");
+
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QLoggingCategory::setFilterRules("*.debug=false");
+    qSetMessagePattern("[%{time yyyyMMdd h:mm:ss.zzz t} %{category} %{type}: %{message}");
+
     MainWindow w;
     w.show();
 
