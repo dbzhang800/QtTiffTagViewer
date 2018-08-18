@@ -1,0 +1,3 @@
+# QtTiffTagViewer
+
+QtTiffTagViewer is a TIFF Tag Viewer application. It lets you view each IFD's TIFF tags.
