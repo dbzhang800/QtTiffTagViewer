@@ -24,12 +24,32 @@
 ****************************************************************************/
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "tifffile.h"
 #include <QCloseEvent>
 #include <QFileInfo>
 #include <QSettings>
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTreeWidgetItem>
+
+/* QByteArray::toHex(char separator) is introduced in Qt5.9, but we need to support older versions.
+ */
+static QByteArray toHex(const QByteArray &bytes, char separator)
+{
+    const int length = separator ? (bytes.size() * 3 - 1) : (bytes.size() * 2);
+    QByteArray hex(length, Qt::Uninitialized);
+    char *hexData = hex.data();
+    const uchar *data = reinterpret_cast<const uchar *>(bytes.data());
+    for (int i = 0, o = 0; i < bytes.size(); ++i) {
+        hexData[o++] = "0123456789ABCEDF"[data[i] >> 4];
+        hexData[o++] = "0123456789ABCEDF"[data[i] & 0xf];
+
+        if ((separator) && (o < length))
+            hexData[o++] = separator;
+    }
+    return hex;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -101,4 +121,109 @@ void MainWindow::saveSettings()
 
 void MainWindow::doOpenTiffFile(const QString &filePath)
 {
+    TiffFile tiff(filePath);
+
+    ui->treeWidget->clear();
+
+    if (tiff.hasError()) {
+        ui->logEdit->appendPlainText(
+            QString("Fail to open the tiff file: %1 [%2]").arg(filePath).arg(tiff.errorString()));
+        return;
+    }
+
+    // headeritem
+    {
+        auto headerItem = new QTreeWidgetItem(ui->treeWidget);
+        headerItem->setText(0, tr("Header"));
+        headerItem->setText(1, toHex(tiff.headerBytes(), ' '));
+        headerItem->setExpanded(true);
+
+        auto childItem = new QTreeWidgetItem(headerItem);
+
+        childItem->setText(0, tr("ByteOrder"));
+        childItem->setText(
+            1, tiff.byteOrder() == TiffFile::BigEndian ? tr("BigEndian") : tr("LittleEndian"));
+
+        childItem = new QTreeWidgetItem(headerItem);
+        childItem->setText(0, tr("Version"));
+        childItem->setText(
+            1, QString("%1 %2").arg(tiff.version()).arg(tiff.isBigTiff() ? "BigTiff" : ""));
+
+        childItem = new QTreeWidgetItem(headerItem);
+        childItem->setText(0, tr("IFD0Offset"));
+        childItem->setText(1, QString::number(tiff.ifd0Offset()));
+    }
+
+    // IfdItem
+    {
+        foreach (const auto ifd, tiff.ifds()) {
+            auto ifdItem = new QTreeWidgetItem(ui->treeWidget);
+            ifdItem->setText(0, tr("IFD"));
+            ifdItem->setText(1, "");
+            ifdItem->setExpanded(true);
+
+            auto childItem = new QTreeWidgetItem(ifdItem);
+            childItem->setText(0, tr("EntriesCount"));
+            childItem->setText(1, QString::number(ifd.ifdEntries().size()));
+
+            // ifd entity items
+            foreach (const auto de, ifd.ifdEntries())
+                fillIfdEntryItem(ifdItem, de);
+
+            // sub ifd items
+            foreach (const auto subIfd, ifd.subIfds())
+                fillSubIfdItem(ifdItem, subIfd);
+
+            childItem = new QTreeWidgetItem(ifdItem);
+            childItem->setText(0, tr("NextIFDOffset"));
+            childItem->setText(1, QString::number(ifd.nextIfdOffset()));
+        }
+    }
+}
+
+void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de)
+{
+    auto deItem = new QTreeWidgetItem(parentItem);
+    deItem->setText(0, tr("IFDEntry"));
+    deItem->setText(1, QString("%1 %2 %3").arg(de.tag()).arg(de.type()).arg(de.count()));
+
+    auto item = new QTreeWidgetItem(deItem);
+    item->setText(0, tr("Tag"));
+    item->setText(1, QString::number(de.tag()));
+
+    item = new QTreeWidgetItem(deItem);
+    item->setText(0, tr("DataType"));
+    item->setText(1, QString::number(de.type()));
+
+    item = new QTreeWidgetItem(deItem);
+    item->setText(0, tr("Count"));
+    item->setText(1, QString::number(de.count()));
+
+    item = new QTreeWidgetItem(deItem);
+    item->setText(0, tr("ValueOrOffset"));
+    item->setText(1, toHex(de.valueOrOffset(), ' '));
+}
+
+void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd)
+{
+    auto ifdItem = new QTreeWidgetItem(parentItem);
+    ifdItem->setText(0, tr("IFD"));
+    ifdItem->setText(1, "");
+    ifdItem->setExpanded(true);
+
+    auto childItem = new QTreeWidgetItem(ifdItem);
+    childItem->setText(0, tr("EntriesCount"));
+    childItem->setText(1, QString::number(ifd.ifdEntries().size()));
+
+    // ifd entity items
+    foreach (const auto de, ifd.ifdEntries())
+        fillIfdEntryItem(ifdItem, de);
+
+    // sub ifd items
+    foreach (const auto subIfd, ifd.subIfds())
+        fillSubIfdItem(ifdItem, subIfd);
+
+    childItem = new QTreeWidgetItem(ifdItem);
+    childItem->setText(0, tr("NextIFDOffset"));
+    childItem->setText(1, QString::number(ifd.nextIfdOffset()));
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>683</width>
-    <height>476</height>
+    <width>975</width>
+    <height>641</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,10 +28,28 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QTreeView" name="treeView">
+     <widget class="QTreeWidget" name="treeWidget">
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
+      <attribute name="headerDefaultSectionSize">
+       <number>250</number>
+      </attribute>
+      <column>
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Value</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Description</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -41,7 +59,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>683</width>
+     <width>975</width>
      <height>23</height>
     </rect>
    </property>
@@ -71,15 +89,6 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QDockWidget" name="dockWidget">
-   <property name="windowTitle">
-    <string>Tiff Information</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents"/>
-  </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="windowTitle">
     <string>Debug</string>

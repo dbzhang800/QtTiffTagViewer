@@ -8,10 +8,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    tifffile.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    tifffile.h
 
 FORMS += \
         mainwindow.ui
