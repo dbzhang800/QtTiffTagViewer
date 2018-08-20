@@ -642,13 +642,11 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
         auto valueBytesCount = dePrivate->count * dePrivate->typeSize();
         QByteArray valueBytes;
         if (!header.isBigTiff() && valueBytesCount > 4) {
-            auto valueOffset =
-                getValueFromBytes<quint32>(deSubIfds.valueOrOffset(), header.byteOrder);
+            auto valueOffset = getValueFromBytes<quint32>(de.valueOrOffset(), header.byteOrder);
             file.seek(valueOffset);
             valueBytes = file.read(valueBytesCount);
         } else if (header.isBigTiff() && valueBytesCount > 8) {
-            auto valueOffset =
-                getValueFromBytes<quint64>(deSubIfds.valueOrOffset(), header.byteOrder);
+            auto valueOffset = getValueFromBytes<quint64>(de.valueOrOffset(), header.byteOrder);
             file.seek(valueOffset);
             valueBytes = file.read(valueBytesCount);
         } else {
