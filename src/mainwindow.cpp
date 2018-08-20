@@ -32,6 +32,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTreeWidgetItem>
+#include <QFontMetricsF>
 
 /* QByteArray::toHex(char separator) is introduced in Qt5.9, but we need to support older versions.
  */
@@ -133,6 +134,7 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
             QString("Fail to open the tiff file: %1 [%2]").arg(filePath).arg(tiff.errorString()));
         return;
     }
+    setWindowTitle(tr("%1 - QtTiffTagViewer").arg(filePath));
 
     // headeritem
     {
@@ -191,6 +193,8 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfd
     foreach (auto v, de.values())
         valueStrings.append(v.toString());
     auto valueString = valueStrings.join(" ");
+    valueString =
+        QFontMetricsF(ui->treeWidget->font()).elidedText(valueString, Qt::ElideRight, 400);
 
     auto deItem = new QTreeWidgetItem(parentItem);
     deItem->setText(0, tr("DE %1").arg(tagName));
@@ -219,6 +223,11 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfd
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("Values"));
     item->setText(1, valueString);
+    for (auto i = 0; i < valueStrings.size(); ++i) {
+        auto valueItem = new QTreeWidgetItem(item);
+        valueItem->setText(0, tr("Value[%1]").arg(i));
+        valueItem->setText(1, valueStrings[i]);
+    }
 }
 
 void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd)
