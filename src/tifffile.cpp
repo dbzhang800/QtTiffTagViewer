@@ -260,6 +260,22 @@ const static struct TagNameAndValue
     { "PERSAMPLE", 65563 },
 };
 
+template <typename T>
+static inline T getValueFromBytes(const char *bytes, TiffFile::ByteOrder byteOrder)
+{
+    if (byteOrder == TiffFile::LittleEndian)
+        return qFromLittleEndian<T>(reinterpret_cast<const uchar *>(bytes));
+    return qFromBigEndian<T>(reinterpret_cast<const uchar *>(bytes));
+}
+
+template <typename T>
+static inline T fixValueByteOrder(T value, TiffFile::ByteOrder byteOrder)
+{
+    if (byteOrder == TiffFile::LittleEndian)
+        return qFromLittleEndian<T>(value);
+    return qFromBigEndian<T>(value);
+}
+
 class TiffFileIfdEntryPrivate : public QSharedData
 {
 public:
@@ -274,11 +290,101 @@ public:
     }
     ~TiffFileIfdEntryPrivate() {}
 
+    int typeSize()
+    {
+        switch (type) {
+        case TiffFileIfdEntry::DT_Byte:
+        case TiffFileIfdEntry::DT_SByte:
+        case TiffFileIfdEntry::DT_Ascii:
+        case TiffFileIfdEntry::DT_Undefined:
+            return 1;
+        case TiffFileIfdEntry::DT_Short:
+        case TiffFileIfdEntry::DT_SShort:
+            return 2;
+        case TiffFileIfdEntry::DT_Long:
+        case TiffFileIfdEntry::DT_SLong:
+        case TiffFileIfdEntry::DT_Ifd:
+        case TiffFileIfdEntry::DT_Float:
+            return 4;
+        default:
+            return 8;
+        }
+    }
+
+    void parserValues(const char *bytes, TiffFile::ByteOrder byteOrder);
+
     quint16 tag;
     quint16 type;
     quint64 count{ 0 };
     QByteArray valueOrOffset; // 12 bytes for tiff or 20 bytes for bigTiff
+    QVariantList values;
 };
+
+void TiffFileIfdEntryPrivate::parserValues(const char *bytes, TiffFile::ByteOrder byteOrder)
+{
+    if (type == TiffFileIfdEntry::DT_Ascii) {
+        // The last char should be '\0', let skip it.
+        auto strings = QString::fromLatin1(bytes, count - 1).split(QLatin1Char('\0'));
+        foreach (auto string, strings)
+            values.append(string);
+        return;
+    }
+
+    if (type == TiffFileIfdEntry::DT_Undefined) {
+        values.append(QByteArray(bytes, count));
+        return;
+    }
+
+    // To make things simple, save normal integer as qint32 or quint32 here.
+    for (int i = 0; i < count; ++i) {
+        QVariant variant;
+        switch (type) {
+        case TiffFileIfdEntry::DT_Byte:
+            values.append(static_cast<quint32>(bytes[i]));
+            break;
+        case TiffFileIfdEntry::DT_SByte:
+            values.append(static_cast<qint32>(bytes[i]));
+            break;
+        case TiffFileIfdEntry::DT_Short:
+            values.append(
+                static_cast<quint32>(getValueFromBytes<quint16>(bytes + i * 2, byteOrder)));
+            break;
+        case TiffFileIfdEntry::DT_SShort:
+            values.append(static_cast<qint32>(getValueFromBytes<qint16>(bytes + i * 2, byteOrder)));
+            break;
+        case TiffFileIfdEntry::DT_Long:
+        case TiffFileIfdEntry::DT_Ifd:
+            values.append(getValueFromBytes<quint32>(bytes + i * 4, byteOrder));
+            break;
+        case TiffFileIfdEntry::DT_SLong:
+            values.append(getValueFromBytes<qint32>(bytes + i * 4, byteOrder));
+            break;
+        case TiffFileIfdEntry::DT_Float:
+            values.append(*(reinterpret_cast<const float *>(bytes + i * 4)));
+            break;
+        case TiffFileIfdEntry::DT_Double:
+            values.append(*(reinterpret_cast<const double *>(bytes + i * 8)));
+            break;
+        case TiffFileIfdEntry::DT_Rational:
+            values.append(getValueFromBytes<quint32>(bytes + i * 4, byteOrder));
+            values.append(getValueFromBytes<quint32>(bytes + i * 4, byteOrder));
+            break;
+        case TiffFileIfdEntry::DT_SRational:
+            values.append(getValueFromBytes<qint32>(bytes + i * 4, byteOrder));
+            values.append(getValueFromBytes<qint32>(bytes + i * 4, byteOrder));
+            break;
+        case TiffFileIfdEntry::DT_Long8:
+        case TiffFileIfdEntry::DT_Ifd8:
+            values.append(getValueFromBytes<quint64>(bytes + i * 8, byteOrder));
+            break;
+        case TiffFileIfdEntry::DT_SLong8:
+            values.append(getValueFromBytes<qint64>(bytes + i * 8, byteOrder));
+            break;
+        default:
+            break;
+        }
+    }
+}
 
 /*!
  * \class TiffFileIfdEntry
@@ -335,6 +441,11 @@ quint64 TiffFileIfdEntry::count() const
 QByteArray TiffFileIfdEntry::valueOrOffset() const
 {
     return d->valueOrOffset;
+}
+
+QVariantList TiffFileIfdEntry::values() const
+{
+    return d->values;
 }
 
 bool TiffFileIfdEntry::isValid() const
@@ -407,27 +518,11 @@ public:
     bool readIfd(qint64 offset, TiffFileIfd *parentIfd = nullptr);
 
     template <typename T>
-    T getValueFromBytes(const char *bytes)
-    {
-        if (header.byteOrder == TiffFile::LittleEndian)
-            return qFromLittleEndian<T>(reinterpret_cast<const uchar *>(bytes));
-        return qFromBigEndian<T>(reinterpret_cast<const uchar *>(bytes));
-    }
-
-    template <typename T>
-    T fixValueByteOrder(T value)
-    {
-        if (header.byteOrder == TiffFile::LittleEndian)
-            return qFromLittleEndian<T>(value);
-        return qFromBigEndian<T>(value);
-    }
-
-    template <typename T>
     T getValueFromFile()
     {
         T v{ 0 };
         file.read(reinterpret_cast<char *>(&v), sizeof(T));
-        return fixValueByteOrder(v);
+        return fixValueByteOrder(v, header.byteOrder);
     }
 
     struct Header
@@ -477,7 +572,7 @@ bool TiffFilePrivate::readHeader()
     }
 
     // version
-    header.version = getValueFromBytes<quint16>(headerBytes.data() + 2);
+    header.version = getValueFromBytes<quint16>(headerBytes.data() + 2, header.byteOrder);
     if (!(header.version == 42 || header.version == 43)) {
         setError(QStringLiteral("Invalid tiff file: Unknown version"));
         return false;
@@ -486,9 +581,10 @@ bool TiffFilePrivate::readHeader()
 
     // ifd0Offset
     if (!header.isBigTiff())
-        header.ifd0Offset = getValueFromBytes<quint32>(header.rawBytes.data() + 4);
+        header.ifd0Offset =
+            getValueFromBytes<quint32>(header.rawBytes.data() + 4, header.byteOrder);
     else
-        header.ifd0Offset = getValueFromBytes<qint64>(header.rawBytes.data() + 8);
+        header.ifd0Offset = getValueFromBytes<qint64>(header.rawBytes.data() + 8, header.byteOrder);
 
     return true;
 }
@@ -514,6 +610,7 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             dePrivate->valueOrOffset = file.read(4);
 
             ifd.d->ifdEntries.append(ifdEntry);
+
             // subIfds tag
             if (dePrivate->tag == 330)
                 deSubIfds = ifdEntry;
@@ -530,11 +627,34 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             dePrivate->valueOrOffset = file.read(8);
 
             ifd.d->ifdEntries.append(ifdEntry);
+
             // subIfds tag
             if (dePrivate->tag == 330)
                 deSubIfds = ifdEntry;
         }
         ifd.d->nextIfdOffset = getValueFromFile<qint64>();
+    }
+
+    // parser data of ifdEntry
+    foreach (auto de, ifd.ifdEntries()) {
+        auto &dePrivate = de.d;
+
+        auto valueBytesCount = dePrivate->count * dePrivate->typeSize();
+        QByteArray valueBytes;
+        if (!header.isBigTiff() && valueBytesCount > 4) {
+            auto valueOffset =
+                getValueFromBytes<quint32>(deSubIfds.valueOrOffset(), header.byteOrder);
+            file.seek(valueOffset);
+            valueBytes = file.read(valueBytesCount);
+        } else if (header.isBigTiff() && valueBytesCount > 8) {
+            auto valueOffset =
+                getValueFromBytes<quint64>(deSubIfds.valueOrOffset(), header.byteOrder);
+            file.seek(valueOffset);
+            valueBytes = file.read(valueBytesCount);
+        } else {
+            valueBytes = dePrivate->valueOrOffset;
+        }
+        dePrivate->parserValues(valueBytes, header.byteOrder);
     }
 
     if (!parentIfd) // IFD0
@@ -543,64 +663,9 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
         parentIfd->d->subIfds.append(ifd);
 
     // get sub ifd offsets
-    QVector<qint64> subIfdOffsets;
-    if (deSubIfds.isValid()) {
-        if (!header.isBigTiff()) {
-            if (deSubIfds.type() == TiffFileIfdEntry::DT_Long
-                || deSubIfds.type() == TiffFileIfdEntry::DT_Ifd) {
-                if (deSubIfds.count() == 1) {
-                    auto subIfdOffset = getValueFromBytes<qint32>(deSubIfds.valueOrOffset());
-                    subIfdOffsets.append(subIfdOffset);
-                } else {
-                    auto valueOffset = getValueFromBytes<quint32>(deSubIfds.valueOrOffset());
-                    file.seek(valueOffset);
-                    for (int i = 0; i < deSubIfds.count(); ++i) {
-                        auto subIfdOffset = getValueFromFile<qint32>();
-                        subIfdOffsets.append(subIfdOffset);
-                    }
-                }
-            } else {
-                // Invalid data type
-                qCWarning(tiffLog) << "Invalid data type for subIfds encountered";
-            }
-        } else {
-            if (deSubIfds.type() == TiffFileIfdEntry::DT_Long
-                || deSubIfds.type() == TiffFileIfdEntry::DT_Ifd) {
-                QByteArray valueBytes;
-                if (deSubIfds.count() <= 2) {
-                    valueBytes = deSubIfds.valueOrOffset();
-                } else {
-                    auto valueOffset = getValueFromBytes<qint64>(deSubIfds.valueOrOffset());
-                    file.seek(valueOffset);
-                    valueBytes = file.read(deSubIfds.count() * 4);
-                }
-                const char *bytes = valueBytes.data();
-                for (int i = 0; i < deSubIfds.count(); ++i) {
-                    auto subIfdOffset = getValueFromBytes<qint32>(bytes);
-                    subIfdOffsets.append(subIfdOffset);
-                }
-            } else if (deSubIfds.type() == TiffFileIfdEntry::DT_Long8
-                       || deSubIfds.type() == TiffFileIfdEntry::DT_Ifd8) {
-                if (deSubIfds.count() == 1) {
-                    subIfdOffsets.append(getValueFromBytes<qint64>(deSubIfds.valueOrOffset()));
-                } else {
-                    auto valueOffset = getValueFromBytes<qint64>(deSubIfds.valueOrOffset());
-                    file.seek(valueOffset);
-                    for (int i = 0; i < deSubIfds.count(); ++i) {
-                        auto subIfdOffset = getValueFromFile<qint64>();
-                        subIfdOffsets.append(subIfdOffset);
-                    }
-                }
-            } else {
-                // Invalid data type
-                qCWarning(tiffLog) << "Invalid data type for subIfds encountered";
-            }
-        }
-    }
-
-    foreach (auto subIfdOffset, subIfdOffsets) {
+    foreach (auto subIfdOffset, deSubIfds.values()) {
         // read sub ifds
-        readIfd(subIfdOffset, &ifd);
+        readIfd(subIfdOffset.toULongLong(), &ifd);
     }
 
     if (ifd.nextIfdOffset() != 0) {

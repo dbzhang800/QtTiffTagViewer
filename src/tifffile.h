@@ -25,6 +25,7 @@
 #pragma once
 #include <QScopedPointer>
 #include <QVector>
+#include <QVariant>
 #include <QExplicitlySharedDataPointer>
 
 class QByteArray;
@@ -50,7 +51,7 @@ public:
         DT_Double,
         DT_Ifd,
         DT_Long8,
-        DT_Slong8,
+        DT_SLong8,
         DT_Ifd8
     };
 
@@ -64,6 +65,7 @@ public:
     QString typeName() const;
     quint64 count() const;
     QByteArray valueOrOffset() const;
+    QVariantList values() const;
     bool isValid() const;
 
 private:

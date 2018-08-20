@@ -37,6 +37,9 @@
  */
 static QByteArray toHex(const QByteArray &bytes, char separator)
 {
+    if (bytes.isEmpty())
+        return QByteArray();
+
     const int length = separator ? (bytes.size() * 3 - 1) : (bytes.size() * 2);
     QByteArray hex(length, Qt::Uninitialized);
     char *hexData = hex.data();
@@ -184,10 +187,18 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
 void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de)
 {
     const auto tagName = de.tagName();
+    QStringList valueStrings;
+    foreach (auto v, de.values())
+        valueStrings.append(v.toString());
+    auto valueString = valueStrings.join(" ");
 
     auto deItem = new QTreeWidgetItem(parentItem);
     deItem->setText(0, tr("DE %1").arg(tagName));
-    deItem->setText(1, QString("Type=%2, Count=%3").arg(de.typeName()).arg(de.count()));
+    deItem->setText(1,
+                    QString("Type=%2, Count=%3, Values=%4")
+                        .arg(de.typeName())
+                        .arg(de.count())
+                        .arg(valueString));
 
     auto item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("Tag"));
@@ -204,6 +215,10 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfd
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("ValueOrOffset"));
     item->setText(1, toHex(de.valueOrOffset(), ' '));
+
+    item = new QTreeWidgetItem(deItem);
+    item->setText(0, tr("Values"));
+    item->setText(1, valueString);
 }
 
 void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd)
