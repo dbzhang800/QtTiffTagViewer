@@ -59,7 +59,9 @@ public:
     ~TiffFileIfdEntry();
 
     quint16 tag() const;
+    QString tagName() const;
     quint16 type() const;
+    QString typeName() const;
     quint64 count() const;
     QByteArray valueOrOffset() const;
     bool isValid() const;

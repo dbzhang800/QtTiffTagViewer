@@ -183,17 +183,19 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
 
 void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de)
 {
+    const auto tagName = de.tagName();
+
     auto deItem = new QTreeWidgetItem(parentItem);
-    deItem->setText(0, tr("IFDEntry"));
-    deItem->setText(1, QString("%1 %2 %3").arg(de.tag()).arg(de.type()).arg(de.count()));
+    deItem->setText(0, tr("DE %1").arg(tagName));
+    deItem->setText(1, QString("Type=%2, Count=%3").arg(de.typeName()).arg(de.count()));
 
     auto item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("Tag"));
-    item->setText(1, QString::number(de.tag()));
+    item->setText(1, QString("%1 %2").arg(tagName).arg(de.tag()));
 
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("DataType"));
-    item->setText(1, QString::number(de.type()));
+    item->setText(1, QString("%1 %2").arg(de.typeName()).arg(de.type()));
 
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("Count"));
