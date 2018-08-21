@@ -473,10 +473,27 @@ public:
     }
     ~TiffFileIfdPrivate() {}
 
+    bool hasIfdEntry(quint16 tag);
+    TiffFileIfdEntry ifdEntry(quint16 tag);
+
     QVector<TiffFileIfdEntry> ifdEntries;
     QVector<TiffFileIfd> subIfds;
     qint64 nextIfdOffset{ 0 };
 };
+
+bool TiffFileIfdPrivate::hasIfdEntry(quint16 tag)
+{
+    return ifdEntry(tag).isValid();
+}
+
+TiffFileIfdEntry TiffFileIfdPrivate::ifdEntry(quint16 tag)
+{
+    auto it = std::find_if(ifdEntries.cbegin(), ifdEntries.cend(),
+                           [tag](const TiffFileIfdEntry &de) { return tag == de.tag(); });
+    if (it == ifdEntries.cend())
+        return TiffFileIfdEntry();
+    return *it;
+}
 
 /*!
  * \class TiffFileIfd
@@ -528,7 +545,9 @@ public:
     T getValueFromFile()
     {
         T v{ 0 };
-        file.read(reinterpret_cast<char *>(&v), sizeof(T));
+        auto bytesRead = file.read(reinterpret_cast<char *>(&v), sizeof(T));
+        if (bytesRead != sizeof(T))
+            qCDebug(tiffLog) << "file read error.";
         return fixValueByteOrder(v, header.byteOrder);
     }
 
@@ -604,7 +623,6 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
     }
 
     TiffFileIfd ifd;
-    TiffFileIfdEntry deSubIfds;
 
     if (!header.isBigTiff()) {
         quint16 deCount = getValueFromFile<quint16>();
@@ -617,10 +635,6 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             dePrivate->valueOrOffset = file.read(4);
 
             ifd.d->ifdEntries.append(ifdEntry);
-
-            // subIfds tag
-            if (dePrivate->tag == TiffFileIfdEntry::T_SubIfd)
-                deSubIfds = ifdEntry;
         }
         ifd.d->nextIfdOffset = getValueFromFile<quint32>();
     } else {
@@ -634,10 +648,6 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             dePrivate->valueOrOffset = file.read(8);
 
             ifd.d->ifdEntries.append(ifdEntry);
-
-            // subIfds tag
-            if (dePrivate->tag == TiffFileIfdEntry::T_SubIfd)
-                deSubIfds = ifdEntry;
         }
         ifd.d->nextIfdOffset = getValueFromFile<qint64>();
     }
@@ -650,11 +660,13 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
         QByteArray valueBytes;
         if (!header.isBigTiff() && valueBytesCount > 4) {
             auto valueOffset = getValueFromBytes<quint32>(de.valueOrOffset(), header.byteOrder);
-            file.seek(valueOffset);
+            if (!file.seek(valueOffset))
+                qCDebug(tiffLog) << "Fail to seek pos: " << valueOffset;
             valueBytes = file.read(valueBytesCount);
         } else if (header.isBigTiff() && valueBytesCount > 8) {
             auto valueOffset = getValueFromBytes<quint64>(de.valueOrOffset(), header.byteOrder);
-            file.seek(valueOffset);
+            if (!file.seek(valueOffset))
+                qCDebug(tiffLog) << "Fail to seek pos: " << valueOffset;
             valueBytes = file.read(valueBytesCount);
         } else {
             valueBytes = dePrivate->valueOrOffset;
@@ -668,9 +680,14 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
         parentIfd->d->subIfds.append(ifd);
 
     // get sub ifd offsets
-    foreach (auto subIfdOffset, deSubIfds.values()) {
-        // read sub ifds
-        readIfd(subIfdOffset.toULongLong(), &ifd);
+    // Fix me!!!
+    // I couldn't parse ifds in photoshop generated Tiff files.
+    if (!ifd.d->hasIfdEntry(TiffFileIfdEntry::T_Photoshop)) {
+        TiffFileIfdEntry deSubIfd = ifd.d->ifdEntry(TiffFileIfdEntry::T_SubIfd);
+        foreach (auto subIfdOffset, deSubIfd.values()) {
+            // read sub ifds
+            readIfd(subIfdOffset.toULongLong(), &ifd);
+        }
     }
 
     if (ifd.nextIfdOffset() != 0) {

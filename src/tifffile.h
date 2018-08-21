@@ -39,6 +39,7 @@ public:
     enum Tag {
         T_SubFleType = 254,
         T_SubIfd = 330,
+        T_Photoshop = 34377,
     };
 
     enum DataType {
