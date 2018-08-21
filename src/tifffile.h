@@ -36,6 +36,11 @@ class TiffFilePrivate;
 class TiffFileIfdEntry
 {
 public:
+    enum Tag {
+        T_SubFleType = 254,
+        T_SubIfd = 330,
+    };
+
     enum DataType {
         DT_Byte = 1,
         DT_Ascii,

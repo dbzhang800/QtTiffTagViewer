@@ -619,7 +619,7 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             ifd.d->ifdEntries.append(ifdEntry);
 
             // subIfds tag
-            if (dePrivate->tag == 330)
+            if (dePrivate->tag == TiffFileIfdEntry::T_SubIfd)
                 deSubIfds = ifdEntry;
         }
         ifd.d->nextIfdOffset = getValueFromFile<quint32>();
@@ -636,7 +636,7 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffFileIfd *parentIfd)
             ifd.d->ifdEntries.append(ifdEntry);
 
             // subIfds tag
-            if (dePrivate->tag == 330)
+            if (dePrivate->tag == TiffFileIfdEntry::T_SubIfd)
                 deSubIfds = ifdEntry;
         }
         ifd.d->nextIfdOffset = getValueFromFile<qint64>();
