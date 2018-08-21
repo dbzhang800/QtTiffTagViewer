@@ -61,6 +61,18 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // create action for recent files
+    for (int i = 0; i < MaxRecentFiles; ++i) {
+        auto act = new QAction(this);
+        act->setVisible(false);
+        act->setProperty("id", i);
+        ui->menu_File->insertAction(ui->actionExit, act);
+        m_actionRecentFiles[i] = act;
+        connect(act, &QAction::triggered, this, &MainWindow::onActionRecentFileTriggered);
+    }
+    m_actionSeparator = ui->menu_File->insertSeparator(ui->actionExit);
+    m_actionSeparator->setVisible(false);
+
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onActionOpenTriggered);
     connect(ui->actionExit, &QAction::triggered, qApp, &QApplication::quit);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onActionAboutTriggered);
@@ -86,8 +98,8 @@ void MainWindow::closeEvent(QCloseEvent *evt)
 
 void MainWindow::onActionOpenTriggered()
 {
-    auto filePath = QFileDialog::getOpenFileName(this, tr("Open Tiff"), QString(),
-                                                 tr("Tiff Image(*.tiff *.tif)"));
+    auto filePath = QFileDialog::getOpenFileName(
+        this, tr("Open Tiff"), m_recentFiles.value(0, QString()), tr("Tiff Image(*.tiff *.tif)"));
     if (filePath.isEmpty())
         return;
 
@@ -105,6 +117,15 @@ void MainWindow::onActionAboutTriggered()
     QMessageBox::about(this, tr("About %1").arg(qApp->applicationName()), text);
 }
 
+void MainWindow::onActionRecentFileTriggered()
+{
+    auto action = qobject_cast<QAction *>(sender());
+    auto filePath = m_recentFiles.value(action->property("id").toInt(), QString());
+    if (!QFileInfo(filePath).exists())
+        return;
+    doOpenTiffFile(filePath);
+}
+
 void MainWindow::loadSettings()
 {
     QSettings settings;
@@ -112,6 +133,9 @@ void MainWindow::loadSettings()
     restoreGeometry(settings.value("rect").toByteArray());
     restoreState(settings.value("state").toByteArray());
     settings.endGroup();
+
+    m_recentFiles = settings.value("recentfiles").toStringList();
+    updateActionRecentFiles();
 }
 
 void MainWindow::saveSettings()
@@ -121,10 +145,18 @@ void MainWindow::saveSettings()
     settings.setValue("rect", saveGeometry());
     settings.setValue("state", saveState());
     settings.endGroup();
+
+    settings.setValue("recentfiles", m_recentFiles);
 }
 
 void MainWindow::doOpenTiffFile(const QString &filePath)
 {
+    m_recentFiles.removeOne(filePath);
+    m_recentFiles.insert(0, filePath);
+    if (m_recentFiles.size() > MaxRecentFiles)
+        m_recentFiles.removeLast();
+    updateActionRecentFiles();
+
     TiffFile tiff(filePath);
 
     ui->treeWidget->clear();
@@ -184,6 +216,19 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
             childItem->setText(1, QString::number(ifd.nextIfdOffset()));
         }
     }
+}
+
+void MainWindow::updateActionRecentFiles()
+{
+    auto count = qMin(m_recentFiles.size(), static_cast<int>(MaxRecentFiles));
+    for (int i = 0; i < count; ++i) {
+        m_actionRecentFiles[i]->setText(QString("%1 %2").arg(i).arg(m_recentFiles[i]));
+        m_actionRecentFiles[i]->setVisible(true);
+    }
+    for (int i = count; i < MaxRecentFiles; ++i)
+        m_actionRecentFiles[i]->setVisible(false);
+
+    m_actionSeparator->setVisible(count > 0);
 }
 
 void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de)

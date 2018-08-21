@@ -39,7 +39,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 protected:
@@ -48,13 +48,20 @@ protected:
 private:
     void onActionOpenTriggered();
     void onActionAboutTriggered();
+    void onActionRecentFileTriggered();
 
     void loadSettings();
     void saveSettings();
     void doOpenTiffFile(const QString &filePath);
+    void updateActionRecentFiles();
 
     void fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de);
     void fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd);
 
     Ui::MainWindow *ui;
+
+    enum { MaxRecentFiles = 10 };
+    QAction *m_actionRecentFiles[MaxRecentFiles];
+    QAction *m_actionSeparator;
+    QStringList m_recentFiles;
 };
