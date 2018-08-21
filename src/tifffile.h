@@ -29,11 +29,11 @@
 #include <QExplicitlySharedDataPointer>
 
 class QByteArray;
-class TiffFileIfdEntryPrivate;
-class TiffFileIfdPrivate;
+class TiffIfdEntryPrivate;
+class TiffIfdPrivate;
 class TiffFilePrivate;
 
-class TiffFileIfdEntry
+class TiffIfdEntry
 {
 public:
     enum Tag {
@@ -61,9 +61,9 @@ public:
         DT_Ifd8
     };
 
-    TiffFileIfdEntry();
-    TiffFileIfdEntry(const TiffFileIfdEntry &other);
-    ~TiffFileIfdEntry();
+    TiffIfdEntry();
+    TiffIfdEntry(const TiffIfdEntry &other);
+    ~TiffIfdEntry();
 
     quint16 tag() const;
     QString tagName() const;
@@ -76,24 +76,24 @@ public:
 
 private:
     friend class TiffFilePrivate;
-    QExplicitlySharedDataPointer<TiffFileIfdEntryPrivate> d;
+    QExplicitlySharedDataPointer<TiffIfdEntryPrivate> d;
 };
 
-class TiffFileIfd
+class TiffIfd
 {
 public:
-    TiffFileIfd();
-    TiffFileIfd(const TiffFileIfd &other);
-    ~TiffFileIfd();
+    TiffIfd();
+    TiffIfd(const TiffIfd &other);
+    ~TiffIfd();
 
-    QVector<TiffFileIfdEntry> ifdEntries() const;
-    QVector<TiffFileIfd> subIfds() const;
+    QVector<TiffIfdEntry> ifdEntries() const;
+    QVector<TiffIfd> subIfds() const;
     qint64 nextIfdOffset() const;
     bool isValid() const;
 
 private:
     friend class TiffFilePrivate;
-    QExplicitlySharedDataPointer<TiffFileIfdPrivate> d;
+    QExplicitlySharedDataPointer<TiffIfdPrivate> d;
 };
 
 class TiffFile
@@ -115,7 +115,7 @@ public:
     qint64 ifd0Offset() const;
 
     // ifds
-    QVector<TiffFileIfd> ifds() const;
+    QVector<TiffIfd> ifds() const;
 
 private:
     QScopedPointer<TiffFilePrivate> d;

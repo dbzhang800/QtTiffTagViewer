@@ -27,8 +27,8 @@
 #include <QMainWindow>
 
 class QTreeWidgetItem;
-class TiffFileIfdEntry;
-class TiffFileIfd;
+class TiffIfdEntry;
+class TiffIfd;
 
 namespace Ui {
 class MainWindow;
@@ -55,8 +55,8 @@ private:
     void doOpenTiffFile(const QString &filePath);
     void updateActionRecentFiles();
 
-    void fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de);
-    void fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd);
+    void fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntry &de);
+    void fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd);
 
     Ui::MainWindow *ui;
 

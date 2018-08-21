@@ -252,7 +252,7 @@ void MainWindow::updateActionRecentFiles()
     m_actionSeparator->setVisible(count > 0);
 }
 
-void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfdEntry &de)
+void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntry &de)
 {
     const auto tagName = de.tagName();
     QStringList valueStrings;
@@ -305,7 +305,7 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfd
     }
 }
 
-void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffFileIfd &ifd)
+void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd)
 {
     auto ifdItem = new QTreeWidgetItem(parentItem);
     ifdItem->setText(0, tr("IFD"));
