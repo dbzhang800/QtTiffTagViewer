@@ -76,6 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onActionOpenTriggered);
     connect(ui->actionExit, &QAction::triggered, qApp, &QApplication::quit);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onActionAboutTriggered);
+    connect(ui->actionAboutQt, &QAction::triggered, this, [this]() { QMessageBox::aboutQt(this); });
 
     loadSettings();
     if (qApp->arguments().size() > 1) {
@@ -108,8 +109,28 @@ void MainWindow::onActionOpenTriggered()
 
 void MainWindow::onActionAboutTriggered()
 {
-    QString text = tr("<b>%1 %2</b><br/>"
-                      "Copyright %3 Debao Zhang. All rights reserved.")
+    QString text = tr("<b>%1 %2</b><br/><br/>"
+                      "Copyright %3 Debao Zhang &lt;hello@debao.me&gt;<br/>"
+                      "All right reserved.<br/>"
+                      "<br/>"
+                      "Permission is hereby granted, free of charge, to any person obtaining"
+                      "a copy of this software and associated documentation files (the"
+                      "\"Software\"), to deal in the Software without restriction, including"
+                      "without limitation the rights to use, copy, modify, merge, publish,"
+                      "distribute, sublicense, and/or sell copies of the Software, and to"
+                      "permit persons to whom the Software is furnished to do so, subject to"
+                      "the following conditions:<br/>"
+                      "<br/>"
+                      "The above copyright notice and this permission notice shall be"
+                      "included in all copies or substantial portions of the Software.<br/>"
+                      "<br/>"
+                      "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,"
+                      "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF"
+                      "MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND"
+                      "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE"
+                      "LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION"
+                      "OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION"
+                      "WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
                        .arg(qApp->applicationName())
                        .arg(qApp->applicationVersion())
                        .arg(2018);
