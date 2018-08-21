@@ -323,10 +323,17 @@ public:
 void TiffFileIfdEntryPrivate::parserValues(const char *bytes, TiffFile::ByteOrder byteOrder)
 {
     if (type == TiffFileIfdEntry::DT_Ascii) {
-        // The last char should be '\0', let skip it.
-        auto strings = QString::fromLatin1(bytes, count - 1).split(QLatin1Char('\0'));
-        foreach (auto string, strings)
-            values.append(string);
+        int start = 0;
+        for (int i = 0; i < count; ++i) {
+            if (bytes[i] == '\0') {
+                values.append(QString::fromLatin1(bytes + start, i - start + 1));
+                start = i + 1;
+            }
+        }
+        if (bytes[count - 1] != '\0') {
+            qCDebug(tiffLog) << "ASCII value donesn't end with NUL";
+            values.append(QString::fromLatin1(bytes + start, count - start));
+        }
         return;
     }
 

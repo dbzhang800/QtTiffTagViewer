@@ -190,8 +190,17 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffFileIfd
 {
     const auto tagName = de.tagName();
     QStringList valueStrings;
-    foreach (auto v, de.values())
-        valueStrings.append(v.toString());
+    foreach (auto v, de.values()) {
+        auto valueString = v.toString();
+        if (v.type() == QVariant::String) { // QMetaType::QString
+            valueString.replace(QLatin1String("\r"), QLatin1String("\\r"));
+            valueString.replace(QLatin1String("\n"), QLatin1String("\\n"));
+            valueString.replace(QLatin1String("\t"), QLatin1String("\\t"));
+            valueString.replace(QLatin1String("\v"), QLatin1String("\\v"));
+            valueString.replace(QLatin1String("\b"), QLatin1String("\\b"));
+        }
+        valueStrings.append(valueString);
+    }
     auto valueString = valueStrings.join(" ");
     valueString =
         QFontMetricsF(ui->treeWidget->font()).elidedText(valueString, Qt::ElideRight, 400);
