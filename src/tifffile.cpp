@@ -432,7 +432,7 @@ QString TiffIfdEntry::tagName() const
     if (it != std::end(tagNames))
         return QString::fromLatin1(it->tagName);
 
-    return QStringLiteral("UnknownTag");
+    return QStringLiteral("UNKNOWNTAG(%1)").arg(d->tag);
 }
 
 quint16 TiffIfdEntry::type() const
