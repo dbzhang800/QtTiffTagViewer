@@ -33,6 +33,11 @@ class TiffIfdEntryPrivate;
 class TiffIfdPrivate;
 class TiffFilePrivate;
 
+struct TiffParserOptions
+{
+    bool parserSubIfds{ true };
+};
+
 class TiffIfdEntry
 {
 public:
@@ -101,7 +106,7 @@ class TiffFile
 public:
     enum ByteOrder { LittleEndian, BigEndian };
 
-    TiffFile(const QString &filePath);
+    TiffFile(const QString &filePath, const TiffParserOptions &options);
     ~TiffFile();
 
     QString errorString() const;

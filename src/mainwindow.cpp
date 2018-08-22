@@ -24,6 +24,7 @@
 ****************************************************************************/
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "optionsdialog.h"
 #include "tifffile.h"
 #include <QCloseEvent>
 #include <QFileInfo>
@@ -75,6 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::onActionOpenTriggered);
     connect(ui->actionExit, &QAction::triggered, qApp, &QApplication::quit);
+    connect(ui->actionOptions, &QAction::triggered, this, &MainWindow::onActionOptionsTriggered);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onActionAboutTriggered);
     connect(ui->actionAboutQt, &QAction::triggered, this, [this]() { QMessageBox::aboutQt(this); });
 
@@ -105,6 +107,15 @@ void MainWindow::onActionOpenTriggered()
         return;
 
     doOpenTiffFile(filePath);
+}
+
+void MainWindow::onActionOptionsTriggered()
+{
+    OptionsDialog dlg(this);
+    dlg.setParserOptions(m_parserOptions);
+
+    if (dlg.exec() == QDialog::Accepted)
+        m_parserOptions = dlg.parserOptions();
 }
 
 void MainWindow::onActionAboutTriggered()
@@ -155,6 +166,14 @@ void MainWindow::loadSettings()
     restoreState(settings.value("state").toByteArray());
     settings.endGroup();
 
+    settings.beginGroup("parser");
+    m_parserOptions.parserSubIfds = settings.value("parsersubifds", true).toBool();
+    settings.endGroup();
+
+    restoreGeometry(settings.value("rect").toByteArray());
+    restoreState(settings.value("state").toByteArray());
+    settings.endGroup();
+
     m_recentFiles = settings.value("recentfiles").toStringList();
     updateActionRecentFiles();
 }
@@ -165,6 +184,10 @@ void MainWindow::saveSettings()
     settings.beginGroup("geometry");
     settings.setValue("rect", saveGeometry());
     settings.setValue("state", saveState());
+    settings.endGroup();
+
+    settings.beginGroup("parser");
+    settings.setValue("parsersubifds", m_parserOptions.parserSubIfds);
     settings.endGroup();
 
     settings.setValue("recentfiles", m_recentFiles);
@@ -178,7 +201,7 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
         m_recentFiles.removeLast();
     updateActionRecentFiles();
 
-    TiffFile tiff(filePath);
+    TiffFile tiff(filePath, m_parserOptions);
 
     ui->treeWidget->clear();
 

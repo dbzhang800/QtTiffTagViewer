@@ -24,11 +24,10 @@
 ****************************************************************************/
 #pragma once
 
+#include "tifffile.h"
 #include <QMainWindow>
 
 class QTreeWidgetItem;
-class TiffIfdEntry;
-class TiffIfd;
 
 namespace Ui {
 class MainWindow;
@@ -47,6 +46,7 @@ protected:
 
 private:
     void onActionOpenTriggered();
+    void onActionOptionsTriggered();
     void onActionAboutTriggered();
     void onActionRecentFileTriggered();
 
@@ -59,6 +59,8 @@ private:
     void fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd);
 
     Ui::MainWindow *ui;
+
+    TiffParserOptions m_parserOptions;
 
     enum { MaxRecentFiles = 10 };
     QAction *m_actionRecentFiles[MaxRecentFiles];
