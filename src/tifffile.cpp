@@ -306,8 +306,16 @@ public:
         case TiffIfdEntry::DT_Ifd:
         case TiffIfdEntry::DT_Float:
             return 4;
-        default:
+
+        case TiffIfdEntry::DT_Rational:
+        case TiffIfdEntry::DT_SRational:
+        case TiffIfdEntry::DT_Long8:
+        case TiffIfdEntry::DT_SLong8:
+        case TiffIfdEntry::DT_Ifd8:
+        case TiffIfdEntry::DT_Double:
             return 8;
+        default:
+            return -1;
         }
     }
 
@@ -657,6 +665,9 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffIfd *parentIfd)
         auto &dePrivate = de.d;
 
         auto valueBytesCount = dePrivate->count * dePrivate->typeSize();
+        // skip unknown datatype
+        if (valueBytesCount < 0)
+            continue;
         QByteArray valueBytes;
         if (!header.isBigTiff() && valueBytesCount > 4) {
             auto valueOffset = getValueFromBytes<quint32>(de.valueOrOffset(), header.byteOrder);
