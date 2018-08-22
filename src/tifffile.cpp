@@ -186,6 +186,7 @@ const static struct TagNameAndValue
     { "FAXSUBADDRESS", 34909 },
     { "FAXRECVTIME", 34910 },
     { "FAXDCS", 34911 },
+    { "DATATIMEORIGINAL", 36867 }, // TIFF/EP
     { "STONITS", 37439 },
     { "FEDEX_EDR", 34929 },
     { "INTEROPERABILITYIFD", 40965 },
