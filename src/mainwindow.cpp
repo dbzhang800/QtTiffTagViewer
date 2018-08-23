@@ -170,10 +170,6 @@ void MainWindow::loadSettings()
     m_parserOptions.parserSubIfds = settings.value("parsersubifds", true).toBool();
     settings.endGroup();
 
-    restoreGeometry(settings.value("rect").toByteArray());
-    restoreState(settings.value("state").toByteArray());
-    settings.endGroup();
-
     m_recentFiles = settings.value("recentfiles").toStringList();
     updateActionRecentFiles();
 }
