@@ -43,6 +43,8 @@ class TiffIfdEntry
 public:
     enum Tag {
         T_SubFleType = 254,
+        T_ImageWidth = 256,
+        T_ImageLength = 257,
         T_SubIfd = 330,
         T_Photoshop = 34377,
     };

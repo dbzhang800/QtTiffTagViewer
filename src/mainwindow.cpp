@@ -307,17 +307,26 @@ void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd)
     auto ifdItem = new QTreeWidgetItem(parentItem);
     if (!parentItem)
         ui->treeWidget->addTopLevelItem(ifdItem);
+
     ifdItem->setText(0, tr("IFD"));
     ifdItem->setText(1, "");
     ifdItem->setExpanded(true);
+
+    int width = -1;
+    int height = -1;
 
     auto childItem = new QTreeWidgetItem(ifdItem);
     childItem->setText(0, tr("EntriesCount"));
     childItem->setText(1, QString::number(ifd.ifdEntries().size()));
 
     // ifd entity items
-    foreach (const auto de, ifd.ifdEntries())
+    foreach (const auto de, ifd.ifdEntries()) {
         fillIfdEntryItem(ifdItem, de);
+        if (de.tag() == TiffIfdEntry::T_ImageWidth)
+            width = de.values().value(0).toInt();
+        if (de.tag() == TiffIfdEntry::T_ImageLength)
+            height = de.values().value(0).toInt();
+    }
 
     // sub ifd items
     foreach (const auto subIfd, ifd.subIfds())
@@ -326,4 +335,7 @@ void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd)
     childItem = new QTreeWidgetItem(ifdItem);
     childItem->setText(0, tr("NextIFDOffset"));
     childItem->setText(1, QString::number(ifd.nextIfdOffset()));
+
+    if (width != -1 && height != -1)
+        ifdItem->setText(1, tr("Image(%1x%2)").arg(width).arg(height));
 }
