@@ -232,30 +232,8 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
     }
 
     // IfdItem
-    {
-        foreach (const auto ifd, tiff.ifds()) {
-            auto ifdItem = new QTreeWidgetItem(ui->treeWidget);
-            ifdItem->setText(0, tr("IFD"));
-            ifdItem->setText(1, "");
-            ifdItem->setExpanded(true);
-
-            auto childItem = new QTreeWidgetItem(ifdItem);
-            childItem->setText(0, tr("EntriesCount"));
-            childItem->setText(1, QString::number(ifd.ifdEntries().size()));
-
-            // ifd entity items
-            foreach (const auto de, ifd.ifdEntries())
-                fillIfdEntryItem(ifdItem, de);
-
-            // sub ifd items
-            foreach (const auto subIfd, ifd.subIfds())
-                fillSubIfdItem(ifdItem, subIfd);
-
-            childItem = new QTreeWidgetItem(ifdItem);
-            childItem->setText(0, tr("NextIFDOffset"));
-            childItem->setText(1, QString::number(ifd.nextIfdOffset()));
-        }
-    }
+    foreach (const auto ifd, tiff.ifds())
+        fillSubIfdItem(nullptr, ifd);
 }
 
 void MainWindow::updateActionRecentFiles()
@@ -327,6 +305,8 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntr
 void MainWindow::fillSubIfdItem(QTreeWidgetItem *parentItem, const TiffIfd &ifd)
 {
     auto ifdItem = new QTreeWidgetItem(parentItem);
+    if (!parentItem)
+        ui->treeWidget->addTopLevelItem(ifdItem);
     ifdItem->setText(0, tr("IFD"));
     ifdItem->setText(1, "");
     ifdItem->setExpanded(true);
