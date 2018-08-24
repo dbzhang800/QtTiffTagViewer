@@ -383,11 +383,11 @@ void TiffIfdEntryPrivate::parserValues(const char *bytes, TiffFile::ByteOrder by
             break;
         case TiffIfdEntry::DT_Rational:
             values.append(getValueFromBytes<quint32>(bytes + i * 4, byteOrder));
-            values.append(getValueFromBytes<quint32>(bytes + i * 4, byteOrder));
+            values.append(getValueFromBytes<quint32>(bytes + i * 4 + 4, byteOrder));
             break;
         case TiffIfdEntry::DT_SRational:
             values.append(getValueFromBytes<qint32>(bytes + i * 4, byteOrder));
-            values.append(getValueFromBytes<qint32>(bytes + i * 4, byteOrder));
+            values.append(getValueFromBytes<qint32>(bytes + i * 4 + 4, byteOrder));
             break;
         case TiffIfdEntry::DT_Long8:
         case TiffIfdEntry::DT_Ifd8:
