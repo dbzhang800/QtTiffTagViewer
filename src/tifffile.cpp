@@ -316,7 +316,7 @@ public:
         case TiffIfdEntry::DT_Double:
             return 8;
         default:
-            return -1;
+            return 0;
         }
     }
 
@@ -669,7 +669,7 @@ bool TiffFilePrivate::readIfd(qint64 offset, TiffIfd *parentIfd)
 
         auto valueBytesCount = dePrivate->count * dePrivate->typeSize();
         // skip unknown datatype
-        if (valueBytesCount < 0)
+        if (valueBytesCount == 0)
             continue;
         QByteArray valueBytes;
         if (!header.isBigTiff() && valueBytesCount > 4) {
