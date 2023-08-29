@@ -35,27 +35,6 @@
 #include <QTreeWidgetItem>
 #include <QFontMetricsF>
 
-/* QByteArray::toHex(char separator) is introduced in Qt5.9, but we need to support older versions.
- */
-static QByteArray toHex(const QByteArray &bytes, char separator)
-{
-    if (bytes.isEmpty())
-        return QByteArray();
-
-    const int length = separator ? (bytes.size() * 3 - 1) : (bytes.size() * 2);
-    QByteArray hex(length, Qt::Uninitialized);
-    char *hexData = hex.data();
-    const uchar *data = reinterpret_cast<const uchar *>(bytes.data());
-    for (int i = 0, o = 0; i < bytes.size(); ++i) {
-        hexData[o++] = "0123456789ABCEDF"[data[i] >> 4];
-        hexData[o++] = "0123456789ABCEDF"[data[i] & 0xf];
-
-        if ((separator) && (o < length))
-            hexData[o++] = separator;
-    }
-    return hex;
-}
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -83,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
     loadSettings();
     if (qApp->arguments().size() > 1) {
         auto filePath = qApp->arguments().value(1);
-        if (QFileInfo(filePath).exists())
+        if (QFileInfo::exists((filePath)))
             doOpenTiffFile(filePath);
     }
 }
@@ -142,9 +121,8 @@ void MainWindow::onActionAboutTriggered()
                       "LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION"
                       "OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION"
                       "WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
-                       .arg(qApp->applicationName())
-                       .arg(qApp->applicationVersion())
-                       .arg(2018);
+                       .arg(qApp->applicationName(), qApp->applicationVersion())
+                       .arg(2023);
 
     QMessageBox::about(this, tr("About %1").arg(qApp->applicationName()), text);
 }
@@ -153,7 +131,7 @@ void MainWindow::onActionRecentFileTriggered()
 {
     auto action = qobject_cast<QAction *>(sender());
     auto filePath = m_recentFiles.value(action->property("id").toInt(), QString());
-    if (!QFileInfo(filePath).exists())
+    if (!QFileInfo::exists(filePath))
         return;
     doOpenTiffFile(filePath);
 }
@@ -212,19 +190,24 @@ void MainWindow::doOpenTiffFile(const QString &filePath)
     {
         auto headerItem = new QTreeWidgetItem(ui->treeWidget);
         headerItem->setText(0, tr("Header"));
-        headerItem->setText(1, toHex(tiff.headerBytes(), ' '));
+        headerItem->setText(1, tiff.headerBytes().toHex(' '));
         headerItem->setExpanded(true);
 
         auto childItem = new QTreeWidgetItem(headerItem);
 
         childItem->setText(0, tr("ByteOrder"));
-        childItem->setText(
-            1, tiff.byteOrder() == TiffFile::BigEndian ? tr("BigEndian") : tr("LittleEndian"));
+        childItem->setText(1,
+                           QString("%1 (%2)")
+                               .arg(tiff.headerBytes().left(2))
+                               .arg(tiff.byteOrder() == TiffFile::BigEndian ? tr("BigEndian")
+                                                                            : tr("LittleEndian")));
 
         childItem = new QTreeWidgetItem(headerItem);
         childItem->setText(0, tr("Version"));
-        childItem->setText(
-            1, QString("%1 %2").arg(tiff.version()).arg(tiff.isBigTiff() ? "BigTiff" : ""));
+        childItem->setText(1,
+                           QString("%1 (%2)")
+                               .arg(tiff.version())
+                               .arg(tiff.isBigTiff() ? "BigTiff" : "Classic Tiff"));
 
         childItem = new QTreeWidgetItem(headerItem);
         childItem->setText(0, tr("IFD0Offset"));
@@ -255,7 +238,7 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntr
     QStringList valueStrings;
     foreach (auto v, de.values()) {
         auto valueString = v.toString();
-        if (v.type() == QVariant::String) { // QMetaType::QString
+        if (v.typeId() == QMetaType::QString) {
             valueString.replace(QLatin1String("\r"), QLatin1String("\\r"));
             valueString.replace(QLatin1String("\n"), QLatin1String("\\n"));
             valueString.replace(QLatin1String("\t"), QLatin1String("\\t"));
@@ -290,7 +273,7 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntr
 
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("ValueOrOffset"));
-    item->setText(1, toHex(de.valueOrOffset(), ' '));
+    item->setText(1, de.valueOrOffset().toHex(' '));
 
     item = new QTreeWidgetItem(deItem);
     item->setText(0, tr("Values"));

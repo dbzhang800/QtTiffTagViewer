@@ -366,7 +366,6 @@ void TiffIfdEntryPrivate::parserValues(const char *bytes, TiffFile::ByteOrder by
 
     // To make things simple, save normal integer as qint32 or quint32 here.
     for (int i = 0; i < count; ++i) {
-        QVariant variant;
         switch (type) {
         case TiffIfdEntry::DT_Byte:
             values.append(static_cast<quint32>(bytes[i]));
