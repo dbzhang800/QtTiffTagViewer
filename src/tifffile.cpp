@@ -265,6 +265,13 @@ const static struct TagNameAndValue
     { "GEO_METADATA", 50909 },
     { "EXTRACAMERAPROFILES", 50933 },
     { "DCSHUESHIFTVALUES", 65535 },
+
+    // TAGS missing from libtiff
+    // GeoTIFF
+    { "MODELPIXELSCALETAG", 33550 },
+    { "GEOKEYDIRECTORYTAG", 34735 },
+    { "GEODOUBLEPARAMSTAG", 34736 },
+    { "GEOASCIIPARAMSTAG", 34737 },
 };
 
 template <typename T>
