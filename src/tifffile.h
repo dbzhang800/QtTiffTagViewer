@@ -79,6 +79,7 @@ public:
     quint64 count() const;
     QByteArray valueOrOffset() const;
     QVariantList values() const;
+    QString valueDescription() const;
     bool isValid() const;
 
 private:

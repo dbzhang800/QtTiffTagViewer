@@ -274,6 +274,22 @@ const static struct TagNameAndValue
     { "GEOASCIIPARAMSTAG", 34737 },
 };
 
+const static struct CompressionNameAndValue
+{
+    const char *name;
+    int value;
+} compressionNames[] = { { "NONE", 1 },          { "CCITTRLE", 2 },      { "CCITTFAX3", 3 },
+                         { "CCITT_T4", 3 },      { "CCITTFAX4", 4 },     { "CCITT_T6", 4 },
+                         { "LZW", 5 },           { "OJPEG", 6 },         { "JPEG", 7 },
+                         { "T85", 9 },           { "T43", 10 },          { "NEXT", 32766 },
+                         { "CCITTRLEW", 32771 }, { "PACKBITS", 32773 },  { "THUNDERSCAN", 32809 },
+                         { "IT8CTPAD", 32895 },  { "IT8LW", 32896 },     { "IT8MP", 32897 },
+                         { "IT8BL", 32898 },     { "PIXARFILM", 32908 }, { "PIXARLOG", 32909 },
+                         { "DEFLATE", 32946 },   { "ADOBE_DEFLATE", 8 }, { "DCS", 32947 },
+                         { "JBIG", 34661 },      { "SGILOG", 34676 },    { "SGILOG24", 34677 },
+                         { "JP2000", 34712 },    { "LERC", 34887 },      { "LZMA", 34925 },
+                         { "ZSTD", 50000 },      { "WEBP", 50001 },      { "JXL", 50002 } };
+
 template <typename T>
 static inline T getValueFromBytes(const char *bytes, TiffFile::ByteOrder byteOrder)
 {
@@ -474,6 +490,20 @@ QByteArray TiffIfdEntry::valueOrOffset() const
 QVariantList TiffIfdEntry::values() const
 {
     return d->values;
+}
+
+QString TiffIfdEntry::valueDescription() const
+{
+    if (d->tag == 259 && d->values.size() == 1) {
+        int v = d->values[0].toInt();
+        auto it = std::find_if(
+            std::begin(compressionNames), std::end(compressionNames),
+            [v](const CompressionNameAndValue &nv) { return nv.value == v; });
+
+        if (it != std::end(compressionNames))
+            return QString::fromLatin1(it->name);
+    }
+    return QString();
 }
 
 bool TiffIfdEntry::isValid() const

@@ -250,6 +250,9 @@ void MainWindow::fillIfdEntryItem(QTreeWidgetItem *parentItem, const TiffIfdEntr
     auto valueString = valueStrings.join(" ");
     valueString =
         QFontMetricsF(ui->treeWidget->font()).elidedText(valueString, Qt::ElideRight, 400);
+    auto vd = de.valueDescription();
+    if (!vd.isEmpty())
+        valueString = QString("%1 [%2]").arg(valueString, vd);
 
     auto deItem = new QTreeWidgetItem(parentItem);
     deItem->setText(0, tr("DE %1").arg(tagName));
