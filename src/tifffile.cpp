@@ -485,7 +485,7 @@ QVariantList TiffIfdEntry::values() const
 
 QString TiffIfdEntry::valueDescription() const
 {
-    if (d->tag == 259 && d->values.size() == 1) {
+    if (d->tag == T_Compression && d->values.size() == 1) {
         const int v = d->values[0].toInt();
 
         if (g_compressionNames.contains(v))
