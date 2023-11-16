@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setApplicationName("QtTiffTagViewer");
     a.setOrganizationName("dbzhang800");
-    a.setApplicationVersion("0.0.1");
+    a.setApplicationVersion(PROJECT_VERSION);
 
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QLoggingCategory::setFilterRules("*.debug=false");

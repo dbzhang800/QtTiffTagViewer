@@ -75,3 +75,6 @@ ipch/*
 
 .rcc
 .pch
+
+# CMake
+CMakeLists.txt.user
