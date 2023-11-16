@@ -1,0 +1,28 @@
+name: TagView-CI-Ubuntu
+ 
+on: [push]
+
+env:
+  QT_VERSION: 6.5.3
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install ninja (linux)
+        run: sudo apt install ninja-build
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{env.QT_VERSION}}
+
+      - name: Checkout source code
+        uses: actions/checkout@v3
+ 
+      - name: Build
+        run: |
+          cmake -S . -B build_dir -G "Ninja Multi-Config"
+          cmake --build build_dir --config Release
