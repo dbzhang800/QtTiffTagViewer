@@ -1,0 +1,35 @@
+name: TagView_CI
+ 
+on: [push]
+
+
+env:
+  QT_VERSION: 6.5.3
+
+jobs:
+  build:
+    name: "Build"
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{env.QT_VERSION}}
+
+      - name: Call vcvarsall.bat Windows amd64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Checkout source code
+        uses: actions/checkout@v3
+ 
+      - name: Build
+        run: |
+          cmake -S . -B build_dir
+          cmake --build build_dir
